@@ -5,7 +5,7 @@
 
 typedef struct fb{
     size_t size;
-    fb *next;
+    struct fb *next;
 } fb;
 
 #endif // FB_H_INCLUDED
