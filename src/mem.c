@@ -89,11 +89,33 @@ void mem_free(void* zone) {
 }
 
 //-------------------------------------------------------------
+// mem_get_size
+//-------------------------------------------------------------
+size_t mem_get_size(void *zone){
+  return *(((size_t *)zone) - sizeof(size_t));
+}
+
+//-------------------------------------------------------------
 // Itérateur(parcours) sur le contenu de l'allocateur
 // mem_show
 //-------------------------------------------------------------
 void mem_show(void (*print)(void *, size_t, int free)) {
-   /* A COMPLETER */
+  fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb *lastFb = *head;
+  void *adr = (void *)(head + sizeof(fb*));
+  void *endadr = get_memory_adr() + get_memory_size();
+
+  while(adr < endadr){
+    if((void *)(lastFb->next) == adr){ // si on est sur une zone libre
+      print((void *)(adr - get_memory_adr()),lastFb->next->size,1);
+      adr = (void *)(lastFb->next+lastFb->next->size);
+      lastFb = lastFb->next;
+    }else{ // si on est sur une zone occupée
+      size_t size = *((size_t*)adr);
+      print((void *)(adr - get_memory_adr()),size,0);
+      adr = adr + size;
+    }
+  }
 }
 
 //-------------------------------------------------------------
