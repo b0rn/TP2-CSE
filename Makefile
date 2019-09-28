@@ -29,7 +29,7 @@ test: $(TESTS)
 DEPS=$(OBJ)/mem.o $(OBJ)/common.o
 
 %: $(DEPS) $(OBJ)/%.o
-		$(CC) -o $(TARGET)/$@ $< $(CFLAGS)
+		$(CC) -o $(TARGET)/$@ $^ $(CFLAGS)
 
 $(OBJ)/%.o: $(SRC)/%.c
 		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
