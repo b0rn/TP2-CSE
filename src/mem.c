@@ -23,6 +23,9 @@ void* mem_alloc(size_t size) {
   size += sizeof(size_t);// on met la taille du bloc au début
   size += (size % ALIGNMENT);// on aligne le bloc
 
+  if(size < sizeof(fb))
+    size += sizeof(fb) - size;
+
   fb **head = (fb**)(mff + sizeof(mem_fit_function_t*));// on récupère la tête
   fb *previousB = (**mff)(*head,size);// on récupère le bloc précédent le bloc vide qui nous interesse
 
@@ -30,8 +33,9 @@ void* mem_alloc(size_t size) {
     fb *b = previousB->next, *next = b->next;// on récupère le bloc vide qui convient à notre strat
 
     // s'il ne reste pas assez de place pour stocker les infos du bloc libre dans la zone libre restante
-    if(b->size - size < sizeof(fb))
+    if(b->size - size < sizeof(fb)){
         size = b->size;
+    }
     else if((void*) b + size < (get_memory_adr() + get_memory_size())){
       // sinon , on crée un nouveau bloc libre
       fb *bNext = b->next;
@@ -71,8 +75,11 @@ void mem_free(void* zone) {
     newFb->next = b;
     tmpB = b;
     b = newFb;
-  }else if(b->next == NULL){
-    b->next = newFb;
+  }else if(b->next == NULL){ // si on a qu'une seule zone libre
+    if(b+b->size == newFb) // si zone libre est collée à la nouvelle zone libre
+      b->size += newFb->size;
+    else
+      b->next = newFb;
     return;
   }
 
