@@ -11,6 +11,7 @@ CFLAGS+= -DDEBUG
 LDFLAGS= $(HOST32)
 INCLUDE=./include
 SRC=./src
+TEST_SRC=./tests
 TARGET=./bin
 OBJ=./obj
 LIB=./lib
@@ -23,13 +24,16 @@ PROGRAMS=memshell
 all: $(PROGRAMS) $(TESTS)
 
 test: $(TESTS)
-	for file in $(TESTS);do $$(TARGET)/$$file; done
+	for file in $(TESTS);do $(TARGET)/$$file;done
 
 # dépendances des binaires
 DEPS=$(OBJ)/mem.o $(OBJ)/common.o
 
 %: $(DEPS) $(OBJ)/%.o
 		$(CC) -o $(TARGET)/$@ $^ $(CFLAGS)
+
+$(OBJ)/test_%.o: $(TEST_SRC)/test_%.c
+		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
 
 $(OBJ)/%.o: $(SRC)/%.c
 		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
