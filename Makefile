@@ -21,6 +21,7 @@ PROGRAMS=memshell
 
 .PHONY: clean all test test_ls
 
+
 all: $(PROGRAMS) $(TESTS)
 
 test: $(TESTS)
@@ -29,23 +30,30 @@ test: $(TESTS)
 # dépendances des binaires
 DEPS=$(OBJ)/mem.o $(OBJ)/common.o
 
-%: $(DEPS) $(OBJ)/%.o
+%: $(DEPS) $(OBJ)/%.o | $(TARGET) 
 		$(CC) -o $(TARGET)/$@ $^ $(CFLAGS)
 
-$(OBJ)/test_%.o: $(TEST_SRC)/test_%.c
+$(OBJ)/test_%.o: $(TEST_SRC)/test_%.c | $(OBJ)
 		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
 
-$(OBJ)/%.o: $(SRC)/%.c
+$(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
 		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
 
 # test avec des programmes existant
 # création d'une librairie partagée
-libmalloc.so: malloc_stub.o mem.o
+libmalloc.so: malloc_stub.o mem.o | $(LIB)
 	$(CC) -shared -Wl,-soname,$(OBJ)/$@ $^ -o $(LIB)/$@
 
 #test avec ls
 test_ls: libmalloc.so
 	LD_PRELOAD=$(LIB)/libmalloc.so ls
+
+$(TARGET):
+	mkdir $(TARGET)
+$(OBJ):
+	mkdir $(OBJ)
+$(LIB):
+	mkdir $(LIB)
 
 # nettoyage
 clean:
