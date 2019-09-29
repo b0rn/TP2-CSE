@@ -8,7 +8,7 @@ void mem_init() {
   fb **ffb = (fb**)((mem_fit_function_t **) get_memory_adr() + sizeof(mem_fit_function_t*));
   *ffb = (fb*)(ffb + sizeof(fb*));// on place le pointeur vers le pointeur de la premiere zone vide
   fb *fictivefb = *ffb;// on met notre première zone vide fictive
-  fictivefb->size = sizeof(fb*);
+  fictivefb->size = sizeof(fb);
   fictivefb->next = fictivefb + sizeof(fb);
   fictivefb->next->size = MEMORY_SIZE - sizeof(mem_fit_function_t*) - sizeof(fb*) - sizeof(fb);
   fictivefb->next->next = NULL;
@@ -34,7 +34,7 @@ void* mem_alloc(size_t size) {
         size = b->size;
     else{
       // sinon , on crée un nouveau bloc libre
-      next = b + size;
+      next = (void *) b +size;
       next->size = b->size - size;
       next->next = b->next;
     }
@@ -102,11 +102,11 @@ size_t mem_get_size(void *zone){
 void mem_show(void (*print)(void *, size_t, int free)) {
   fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
   fb *lastFb = *head;
-  void *adr = (void *)(head + sizeof(fb*));
+  void *adr = ((fb*)(head + sizeof(fb*)) + sizeof(fb));
   void *endadr = get_memory_adr() + get_memory_size();
 
   while(adr < endadr){
-    if((void *)(lastFb->next) == adr){ // si on est sur une zone libre
+    if(lastFb->next == (fb*)adr){ // si on est sur une zone libre
       print((void *)(adr - get_memory_adr()),lastFb->next->size,1);
       adr = (void *)(lastFb->next+lastFb->next->size);
       lastFb = lastFb->next;
