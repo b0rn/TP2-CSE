@@ -41,7 +41,7 @@ void* mem_alloc(size_t size) {
     previousB->next = next;// on lie le bloc précédent au bloc suivant notre bloc à allouer
 
     *((size_t *)b) = size;// on met la taille allouée au début du bloc
-    return ((size_t *)b)+sizeof(size_t);// on retourne l'adresse qui est après la taille
+    return (void *)b+sizeof(size_t);// on retourne l'adresse qui est après la taille
   }
   return NULL;
 }
@@ -50,31 +50,40 @@ void* mem_alloc(size_t size) {
 // mem_free
 //-------------------------------------------------------------
 void mem_free(void* zone) {
-   size_t size = *((size_t *)zone - sizeof(size_t));// on récupère la taille de la zone
+  size_t size = *(size_t*)(zone - sizeof(size_t));// on récupère la taille de la zone
 
-   fb *newFb = (fb*)((size_t *)zone - sizeof(size_t));// On récupère l'adresse ou placer notre nouveau bloc vide
-   newFb->size = size;
-   newFb->next = NULL;
+  fb *newFb = (fb*)(zone - sizeof(size_t));// On récupère l'adresse ou placer notre nouveau bloc vide
+  newFb->size = size;
+  newFb->next = NULL;
 
-   fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
-   fb *b = (*head)->next;// on saute la première zone libre (fictive)
-   fb *tmpB = newFb;
+  fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb *b = (*head)->next;// on saute la première zone libre (fictive)
+  fb *tmpB = newFb;
 
-   if(b == NULL || b->next == NULL){ // si on a pas de zone libre ou pas de suivant
-     if(b->next == NULL) b->next = newFb;// si on a pas de suivant , on affecte la nouvelle zone au suivant
-     else (*head)->next = newFb;// sinon, la nouvelle zone devient le suivant de la zone fictive
-     return;
+  if(b == NULL){ // si on a pas de bloc libre
+    (*head)->next = newFb;// on lie la tête au nouveau bloc
+    return;
+  }
+
+  if(b > newFb){ // si notre premier bloc libre est après celui qu'on vient de libérer
+    (*head)->next = newFb;
+    newFb->next = b;
+    tmpB = b;
+    b = newFb;
+  }else if(b->next == NULL){
+    b->next = newFb;
+    return;
   }
 
   while(tmpB != NULL){
     if(b->next >= tmpB){ // si le bloc suivant est après la zone à traiter
       if(tmpB == newFb){ // si on traite la zone à libérer
-          // on insère la nouvelle zone libre dans la liste chainée
-          tmpB->next = b->next;
-          b->next = tmpB;
+        // on insère la nouvelle zone libre dans la liste chainée
+        tmpB->next = b->next;
+        b->next = tmpB;
       }
 
-      if(b + b->size == tmpB){ // si la zone à traiter et collée à la zone actuelle
+      if((void*)b + b->size == tmpB){ // si la zone à traiter et collée à la zone actuelle
         b->size += tmpB->size;
         b->next = tmpB->next;
         tmpB = b->next;
@@ -112,7 +121,7 @@ void mem_show(void (*print)(void *, size_t, int free)) {
       lastFb = lastFb->next;
     }else{ // si on est sur une zone occupée
       size_t size = *((size_t*)adr);
-      print((void *)(adr - get_memory_adr()),size,0);
+      print((void*)((adr + sizeof(size_t)) - get_memory_adr()),size,0);
       adr = adr + size;
     }
   }
