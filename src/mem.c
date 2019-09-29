@@ -32,11 +32,12 @@ void* mem_alloc(size_t size) {
     // s'il ne reste pas assez de place pour stocker les infos du bloc libre dans la zone libre restante
     if(b->size - size < sizeof(fb))
         size = b->size;
-    else{
+    else if((void*) b + size < (get_memory_adr() + get_memory_size())){
       // sinon , on crée un nouveau bloc libre
+      fb *bNext = b->next;
       next = (void *) b +size;
       next->size = b->size - size;
-      next->next = b->next;
+      next->next = bNext;
     }
     previousB->next = next;// on lie le bloc précédent au bloc suivant notre bloc à allouer
 
@@ -75,7 +76,7 @@ void mem_free(void* zone) {
     return;
   }
 
-  while(tmpB != NULL){
+  while(tmpB != NULL && b != NULL){
     if(b->next >= tmpB){ // si le bloc suivant est après la zone à traiter
       if(tmpB == newFb){ // si on traite la zone à libérer
         // on insère la nouvelle zone libre dans la liste chainée
