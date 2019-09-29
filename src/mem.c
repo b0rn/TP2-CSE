@@ -76,7 +76,7 @@ void mem_free(void* zone) {
     tmpB = b;
     b = newFb;
   }else if(b->next == NULL){ // si on a qu'une seule zone libre
-    if(b+b->size == newFb) // si zone libre est collée à la nouvelle zone libre
+    if((void*)b+b->size == newFb) // si zone libre est collée à la nouvelle zone libre
       b->size += newFb->size;
     else
       b->next = newFb;
