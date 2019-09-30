@@ -3,7 +3,7 @@
 // mem_init
 //-------------------------------------------------------------
 void mem_init() {
-  mem_fit(&mem_first_fit);// on initialise la fonction fit
+  mem_fit(&mem_worst_fit);// on initialise la fonction fit
 
   fb **ffb = (fb**)((mem_fit_function_t **) get_memory_adr() + sizeof(mem_fit_function_t*));
   *ffb = (fb*)(ffb + sizeof(fb*));// on place le pointeur vers le pointeur de la premiere zone vide
@@ -156,7 +156,7 @@ struct fb* mem_best_fit(struct fb* head, size_t size) {
   fb *best = NULL, *b = head;
   while(b->next != NULL){
     if(b->next->size >= size)
-      best = (best == NULL)?b->next:((b->next->size < best->size)?b->next:best);
+      best = (best == NULL)?b:((b->next->size < best->next->size)?b:best);
     b = b->next;
   }
   return best;
@@ -166,7 +166,7 @@ struct fb* mem_worst_fit(struct fb* head, size_t size) {
   fb *best = NULL, *b = head;
   while(b->next != NULL){
     if(b->next->size >= size)
-      best = (best == NULL)?b->next:((b->next->size > best->size)?b->next:best);
+      best = (best == NULL)?b:((b->next->size > best->next->size)?b:best);
     b = b->next;
   }
   return best;

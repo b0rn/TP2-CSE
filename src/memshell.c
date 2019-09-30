@@ -56,10 +56,10 @@ int main(int argc, char** argv)
     int taille, i;
     void* allocations[MAX_ALLOCATIONS];
     int nb_alloc=0;
-    
+
     aide();
     mem_init();
-    
+
     while (1) {
         fprintf(stderr, "? ");
         fflush(stdout);
