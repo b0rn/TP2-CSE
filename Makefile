@@ -30,22 +30,22 @@ test: $(TESTS)
 # dépendances des binaires
 DEPS=$(OBJ)/mem.o $(OBJ)/common.o
 
-%: $(DEPS) $(OBJ)/%.o | $(TARGET) 
+%: $(DEPS) $(OBJ)/%.o | $(TARGET)
 		$(CC) -o $(TARGET)/$@ $^ $(CFLAGS)
 
 $(OBJ)/test_%.o: $(TEST_SRC)/test_%.c | $(OBJ)
 		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
 
 $(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
-		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
+		$(CC) -fPIC -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
 
 # test avec des programmes existant
 # création d'une librairie partagée
-libmalloc.so: malloc_stub.o mem.o | $(LIB)
-	$(CC) -shared -Wl,-soname,$(OBJ)/$@ $^ -o $(LIB)/$@
+$(LIB)/libmalloc.so: $(OBJ)/malloc_stub.o $(OBJ)/mem.o $(OBJ)/common.o | $(LIB)
+	$(CC)  -shared $^ -Wl,-soname,libmalloc.so -o $@
 
 #test avec ls
-test_ls: libmalloc.so
+test_ls: $(LIB)/libmalloc.so
 	LD_PRELOAD=$(LIB)/libmalloc.so ls
 
 $(TARGET):
