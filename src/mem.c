@@ -55,6 +55,8 @@ void* mem_alloc(size_t size) {
 // mem_free
 //-------------------------------------------------------------
 void mem_free(void* zone) {
+  if(zone == NULL) return;
+
   size_t size = *(size_t*)(zone - sizeof(size_t));// on récupère la taille de la zone
 
   fb *newFb = (fb*)(zone - sizeof(size_t));// On récupère l'adresse ou placer notre nouveau bloc vide
@@ -102,6 +104,73 @@ void mem_free(void* zone) {
         tmpB = NULL;// arret de la boucle
     }else
       b = b->next;// on continue à chercher le bloc qui précède notre nouvelle zone
+  }
+}
+
+//-------------------------------------------------------------
+// mem_realloc
+//-------------------------------------------------------------
+void* mem_realloc(void *ptr, size_t size){
+  if(ptr == NULL)
+    return mem_alloc(size);
+  if(size == 0){
+    mem_free(ptr);
+    return NULL;
+  }
+
+  // Cas 1 : on peut agrandir/rétrecir la zone allouée grace à une concat
+  // Cas 2 : cas 1 impossible, si mem_alloc(size) != NULL => return ça & free(ptr)
+  size_t originalSize = mem_get_size(ptr) - sizeof(size_t);
+  size += size % ALIGNMENT;
+
+  if(size == originalSize)return ptr;// si on veut la même taille
+  if(size < originalSize && originalSize - size < sizeof(fb))// si on rétrécie et que le nouveau bloc est trop petit
+    return ptr;
+
+  fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb *previousB = *head;
+  // trouvons le bloc libre précédent notre bb
+  while(previousB->next != NULL && (void*)previousB->next < ptr)
+    previousB = previousB->next;
+
+  if(size < originalSize){
+    // si on rétrécie
+    *((size_t*)(ptr-sizeof(size_t))) = size+sizeof(size_t);// on actualise la taille
+    *((size_t*)(ptr+size)) = originalSize-size;// on crée une nouvelle zone occupée "fictive"
+    mem_free(ptr+size);// on libère cette nouvelle zone
+    return ptr;
+  }else{
+    if(previousB->next == NULL) return NULL;// Si on a plus de mémoire
+    else{
+      // si on a un bloc libre collé à notre zone et qu'il est de taille suffisante
+      if(ptr+originalSize == (void*)previousB->next && previousB->next->size >= size-originalSize){
+        fb *next = NULL;
+        if(previousB->next->size - (size-originalSize) < sizeof(fb)){
+          // si le reste du bloc libre est trop petit
+          *((size_t*)(ptr-sizeof(size_t))) += previousB->next->size;// on prend tout le bloc
+          next = previousB->next->next;
+        }else{ // si le bloc libre est assez grand
+          // on crée un nouveau bloc libre
+          next = (void*)previousB->next + (size-originalSize);
+          next->next = previousB->next->next;
+          next->size = size-originalSize;
+          // on met la taille du bb à jour
+          *((size_t*)(ptr-sizeof(size_t))) += size-originalSize;
+        }
+        previousB->next = next;
+        return ptr;
+      }else{
+        // sinon, on tente d'allouer une nouvelle zone de taille !=
+        void *newZone = mem_alloc(size);
+        if(newZone != NULL){
+          // si on a trouvé une zone , on copie les données de l'ancienne dans la nouvelle
+          for(size_t i = 0; i < originalSize; i++)
+            *((char*)newZone+i) = *((char*)ptr+i);
+          mem_free(ptr);
+        }
+        return newZone;
+      }
+    }
   }
 }
 
