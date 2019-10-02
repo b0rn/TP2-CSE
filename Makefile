@@ -31,7 +31,7 @@ test: $(TESTS)
 DEPS=$(OBJ)/mem.o $(OBJ)/common.o
 
 %: $(DEPS) $(OBJ)/%.o | $(TARGET)
-		$(CC) -o $(TARGET)/$@ $^ $(CFLAGS)
+		$(CC) -g -o $(TARGET)/$@ $^ $(CFLAGS)
 
 $(OBJ)/test_%.o: $(TEST_SRC)/test_%.c | $(OBJ)
 		$(CC) -I$(INCLUDE)/ -o $@ -c $< $(CFLAGS)
