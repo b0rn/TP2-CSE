@@ -5,7 +5,7 @@
 void mem_init() {
   mem_fit(&mem_worst_fit);// on initialise la fonction fit
 
-  fb **ffb = (fb**)((mem_fit_function_t **) get_memory_adr() + sizeof(mem_fit_function_t*));
+  fb **ffb = (fb**)(get_memory_adr() + sizeof(mem_fit_function_t*));
   *ffb = (fb*)(ffb + sizeof(fb*));// on place le pointeur vers le pointeur de la premiere zone vide
   fb *fictivefb = *ffb;// on met notre première zone vide fictive
   fictivefb->size = sizeof(fb);
@@ -26,7 +26,7 @@ void* mem_alloc(size_t size) {
   if(size < sizeof(fb))
     size += sizeof(fb) - size;
 
-  fb **head = (fb**)(mff + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb **head = (fb**)((void*)mff + sizeof(mem_fit_function_t*));// on récupère la tête
   fb *previousB = (**mff)(*head,size);// on récupère le bloc précédent le bloc vide qui nous interesse
 
   if(previousB != NULL && previousB->next != NULL){
@@ -63,7 +63,7 @@ void mem_free(void* zone) {
   newFb->size = size;
   newFb->next = NULL;
 
-  fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb **head = (fb**)(get_memory_adr() + sizeof(mem_fit_function_t*));// on récupère la tête
   fb *b = (*head)->next;// on saute la première zone libre (fictive)
   fb *tmpB = newFb;
 
@@ -127,7 +127,7 @@ void* mem_realloc(void *ptr, size_t size){
   if(size < originalSize && originalSize - size < sizeof(fb))// si on rétrécie et que le nouveau bloc est trop petit
     return ptr;
 
-  fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb **head = (fb**)(get_memory_adr() + sizeof(mem_fit_function_t*));// on récupère la tête
   fb *previousB = *head;
   // trouvons le bloc libre précédent notre bb
   while(previousB->next != NULL && (void*)previousB->next < ptr)
@@ -186,7 +186,7 @@ size_t mem_get_size(void *zone){
 // mem_show
 //-------------------------------------------------------------
 void mem_show(void (*print)(void *, size_t, int free)) {
-  fb **head = (fb**)(((mem_fit_function_t **) get_memory_adr()) + sizeof(mem_fit_function_t*));// on récupère la tête
+  fb **head = (fb**)(get_memory_adr() + sizeof(mem_fit_function_t*));// on récupère la tête
   fb *lastFb = *head;
   void *adr = ((fb*)(head + sizeof(fb*)) + sizeof(fb));
   void *endadr = get_memory_adr() + get_memory_size();
