@@ -16,7 +16,7 @@ TARGET=./bin
 OBJ=./obj
 LIB=./lib
 
-TESTS+=test_init test_base test_cheese test_fusion
+TESTS+=test_init test_base test_cheese test_fusion test_realloc
 PROGRAMS=memshell
 
 .PHONY: clean all test test_ls
