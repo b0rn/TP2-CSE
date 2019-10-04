@@ -12,6 +12,7 @@ void mem_init() {
   fictivefb->next = fictivefb + sizeof(fb);
   fictivefb->next->size = MEMORY_SIZE - sizeof(mem_fit_function_t*) - sizeof(fb*) - sizeof(fb);
   fictivefb->next->next = NULL;
+  VALGRIND_CREATE_MEMPOOL(fictivefb->next, 0, 0);
 }
 
 //-------------------------------------------------------------
@@ -46,6 +47,8 @@ void* mem_alloc(size_t size) {
     previousB->next = next;// on lie le bloc précédent au bloc suivant notre bloc à allouer
 
     *((size_t *)b) = size;// on met la taille allouée au début du bloc
+    void *adr = (fb*)((fb**)(get_memory_adr()+sizeof(mem_fit_function_t*))+sizeof(fb*))+sizeof(fb);
+    VALGRIND_MEMPOOL_ALLOC(adr, (void*)b+sizeof(size_t), size-sizeof(size_t));
     return (void *)b+sizeof(size_t);// on retourne l'adresse qui est après la taille
   }
   return NULL;
@@ -55,6 +58,7 @@ void* mem_alloc(size_t size) {
 // mem_free
 //-------------------------------------------------------------
 void mem_free(void* zone) {
+  void *adr = (fb*)((fb**)(get_memory_adr()+sizeof(mem_fit_function_t*))+sizeof(fb*))+sizeof(fb);
   if(zone == NULL) return;
 
   size_t size = *(size_t*)(zone - sizeof(size_t));// on récupère la taille de la zone
@@ -69,6 +73,7 @@ void mem_free(void* zone) {
 
   if(b == NULL){ // si on a pas de bloc libre
     (*head)->next = newFb;// on lie la tête au nouveau bloc
+    VALGRIND_MEMPOOL_FREE(adr, zone);
     return;
   }
 
@@ -82,6 +87,7 @@ void mem_free(void* zone) {
       b->size += newFb->size;
     else
       b->next = newFb;
+    VALGRIND_MEMPOOL_FREE(adr, zone);
     return;
   }
 
@@ -105,6 +111,7 @@ void mem_free(void* zone) {
     }else
       b = b->next;// on continue à chercher le bloc qui précède notre nouvelle zone
   }
+  VALGRIND_MEMPOOL_FREE(adr, zone);
 }
 
 //-------------------------------------------------------------
@@ -137,7 +144,7 @@ void* mem_realloc(void *ptr, size_t size){
     // si on rétrécie
     *((size_t*)(ptr-sizeof(size_t))) = size+sizeof(size_t);// on actualise la taille
     *((size_t*)(ptr+size)) = originalSize-size;// on crée une nouvelle zone occupée "fictive"
-    mem_free(ptr+size);// on libère cette nouvelle zone
+    mem_free(ptr+size+sizeof(size_t));// on libère cette nouvelle zone
     return ptr;
   }else{
     if(previousB->next == NULL) return NULL;// Si on a plus de mémoire
@@ -153,7 +160,7 @@ void* mem_realloc(void *ptr, size_t size){
           // on crée un nouveau bloc libre
           next = (void*)previousB->next + (size-originalSize);
           next->next = previousB->next->next;
-          next->size = size-originalSize;
+          next->size = previousB->next->size - (size-originalSize);
           // on met la taille du bb à jour
           *((size_t*)(ptr-sizeof(size_t))) += size-originalSize;
         }
@@ -178,7 +185,7 @@ void* mem_realloc(void *ptr, size_t size){
 // mem_get_size
 //-------------------------------------------------------------
 size_t mem_get_size(void *zone){
-  return *(((size_t *)zone) - sizeof(size_t));
+  return *(size_t*)(zone-sizeof(size_t));
 }
 
 //-------------------------------------------------------------
@@ -194,12 +201,12 @@ void mem_show(void (*print)(void *, size_t, int free)) {
   while(adr < endadr){
     if(lastFb->next == (fb*)adr){ // si on est sur une zone libre
       print((void *)(adr - get_memory_adr()),lastFb->next->size,1);
-      adr = (void *)(lastFb->next+lastFb->next->size);
+      adr = (void *)lastFb->next+lastFb->next->size;
       lastFb = lastFb->next;
     }else{ // si on est sur une zone occupée
-      size_t size = *((size_t*)adr);
+      size_t size = *((size_t*)adr)-sizeof(size_t);
       print((void*)((adr + sizeof(size_t)) - get_memory_adr()),size,0);
-      adr = adr + size;
+      adr = adr + size+sizeof(size_t);
     }
   }
 }
