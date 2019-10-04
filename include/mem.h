@@ -6,8 +6,6 @@
 #include "common.h"
 #include "fb.h"
 
-#define ALIGNMENT 4
-
 /* -----------------------------------------------*/
 /* Interface utilisateur de votre allocateur      */
 /* -----------------------------------------------*/

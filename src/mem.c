@@ -21,7 +21,7 @@ void* mem_alloc(size_t size) {
   mem_fit_function_t **mff = (mem_fit_function_t **) get_memory_adr();// on récupère la fonction de fit
 
   size += sizeof(size_t);// on met la taille du bloc au début
-  size += (size % ALIGNMENT);// on aligne le bloc
+  size += (size % __BIGGEST_ALIGNMENT__);// on aligne le bloc
 
   if(size < sizeof(fb))
     size += sizeof(fb) - size;
@@ -121,7 +121,7 @@ void* mem_realloc(void *ptr, size_t size){
   // Cas 1 : on peut agrandir/rétrecir la zone allouée grace à une concat
   // Cas 2 : cas 1 impossible, si mem_alloc(size) != NULL => return ça & free(ptr)
   size_t originalSize = mem_get_size(ptr) - sizeof(size_t);
-  size += size % ALIGNMENT;
+  size += size % __BIGGEST_ALIGNMENT__;
 
   if(size == originalSize)return ptr;// si on veut la même taille
   if(size < originalSize && originalSize - size < sizeof(fb))// si on rétrécie et que le nouveau bloc est trop petit
