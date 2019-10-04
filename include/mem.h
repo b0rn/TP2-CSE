@@ -2,6 +2,7 @@
 #define __MEM_H
 #include <stdio.h>
 #include <stddef.h>
+#include <valgrind/valgrind.h>
 #include "mem_os.h"
 #include "common.h"
 #include "fb.h"
@@ -11,6 +12,7 @@
 /* -----------------------------------------------*/
 void mem_init(void);
 void* mem_alloc(size_t);
+void* mem_realloc(void *ptr,size_t size);
 void mem_free(void*);
 size_t mem_get_size(void *);
 
