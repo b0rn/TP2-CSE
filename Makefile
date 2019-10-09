@@ -18,11 +18,12 @@ LIB=./lib
 
 TESTS+=test_init test_base test_cheese test_fusion test_realloc
 PROGRAMS=memshell
+LIBS=$(LIB)/libmalloc.so
 
 .PHONY: clean all test test_ls
 
 
-all: $(PROGRAMS) $(TESTS)
+all: $(PROGRAMS) $(TESTS) $(LIBS)
 
 test: $(TESTS)
 	for file in $(TESTS);do $(TARGET)/$$file;done
